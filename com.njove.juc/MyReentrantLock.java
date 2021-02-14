@@ -8,7 +8,7 @@ import java.util.concurrent.locks.ReentrantLock;
  * @author yan.pb
  * @date 2021/01/26
  */
-public class MyReentrantLock implements Serializable {
+public class MyReentrantLock implements MyLock, Serializable {
 
     private final Sync sync;
 
@@ -26,10 +26,43 @@ public class MyReentrantLock implements Serializable {
         sync = fair ? new FairSync() : new NonfairSync();
     }
 
+    @Override
+    public void lock() {
+        sync.lock();
+    }
+
+    @Override
+    public boolean tryLock() {
+        return sync.nonfairTryAcquire(1);
+    }
+
+    @Override
+    public void unlock() {
+        sync.release(1);
+    }
+
+
     /**
      * ReentrantLock中的模板实现类，定义为abstract，分别定义了公平锁与非公平锁的内部实现类
      */
     abstract static class Sync extends AbstractQueuedSynchronizer {
+
+        abstract void lock();
+
+        @Override
+        protected final boolean tryRelease(int releases) {
+            int c = getState() - releases;
+            if (Thread.currentThread() != getExclusiveOwnerThread())
+                throw new IllegalMonitorStateException();
+            boolean free = false;
+            if (c == 0) {
+                free = true;
+                setExclusiveOwnerThread(null);
+            }
+            setState(c);
+            return free;
+        }
+
         // 非公平锁实际获取，拿到锁返回true，否则false
         final boolean nonfairTryAcquire(int acquires) {
             final Thread current = Thread.currentThread();
@@ -82,6 +115,7 @@ public class MyReentrantLock implements Serializable {
      */
     static final class NonfairSync extends Sync {
         // 非公平锁获取，第一次尝试获取锁，拿到之后将独占线程设置为当前线程
+        @Override
         final void lock() {
             if (compareAndSetState(0, 1)) {
                 setExclusiveOwnerThread(Thread.currentThread());
@@ -102,6 +136,7 @@ public class MyReentrantLock implements Serializable {
      */
     static final class FairSync extends Sync {
         // 锁获取
+        @Override
         final void lock() {
             acquire(1);
         }

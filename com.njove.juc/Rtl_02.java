@@ -6,13 +6,9 @@ import java.util.concurrent.locks.ReentrantLock;
  * @author yan.pb
  * @date 2021/01/25
  */
-@SuppressWarnings("all")
-public class Rtl_01 {
+public class Rtl_02 {
     public static void main(String[] args) {
-        Lock lock = new ReentrantLock();
-        Condition conditionA = lock.newCondition();
-        Condition conditionB = lock.newCondition();
-        Condition conditionC = lock.newCondition();
+        MyLock lock = new MyReentrantLock();
         new Thread(() -> {
 //            for (int i = 0; i < 10; i++) {
 //                System.out.println("A");
@@ -22,8 +18,6 @@ public class Rtl_01 {
 
                 try {
                     System.out.println("A");
-                    conditionB.signal();
-                    conditionA.await();
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
@@ -40,8 +34,6 @@ public class Rtl_01 {
             for (int i = 0; i < 10; i++) {
                 try {
                     System.out.println("B");
-                    conditionC.signal();
-                    conditionB.await();
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
@@ -57,8 +49,6 @@ public class Rtl_01 {
             for (int i = 0; i < 10; i++) {
                 try {
                     System.out.println("C");
-                    conditionA.signal();
-                    conditionC.await();
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
